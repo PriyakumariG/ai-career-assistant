@@ -23,21 +23,6 @@ Actively in development. Currently built: backend foundation, database design, a
 - Job match scoring
 - Cover letter & interview question generation
 
-## Architecture
-
-React Frontend → FastAPI Backend → PostgreSQL Database
-
-## Local Development Setup
-
-backend/
-├── app/
-│ ├── core/ # config, database connection
-│ ├── api/routes/ # API endpoints
-│ ├── models/ # SQLAlchemy database models
-│ ├── schemas/ # Pydantic request/response schemas
-│ └── services/ # business logic
-└── alembic/ # database migrations
-
 ### Prerequisites
 - Python 3.11+
 - Docker Desktop
