@@ -30,6 +30,15 @@ def upload_resume(
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Only PDF and DOCX files are allowed")
 
+    existing = db.query(Resume).filter(
+        Resume.user_id == current_user.id, Resume.file_name == file.filename
+    ).first()
+    if existing:
+        raise HTTPException(
+        status_code=409,
+        detail=f"You already uploaded a file named '{file.filename}'. Please rename it or choose the existing one from your history.",
+    )
+
     unique_name = f"{uuid.uuid4()}{ext}"
     file_path = os.path.join(UPLOAD_DIR, unique_name)
 
