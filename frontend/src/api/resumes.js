@@ -21,3 +21,8 @@ export const generateCoverLetter = (resumeId, jobDescription = null) =>
   apiClient.post(`/resumes/${resumeId}/cover-letter`, {
     job_description: jobDescription,
   });
+
+export const generateInterviewQuestions = (resumeId, jobDescription = null) =>
+  apiClient.post(`/resumes/${resumeId}/interview-questions`, {
+    job_description: jobDescription,
+  });  

@@ -3,8 +3,13 @@ import Navbar from "../components/Navbar";
 import ResumeUpload from "../components/ResumeUpload";
 import AnalysisResults from "../components/AnalysisResults";
 import CoverLetterModal from "../components/CoverLetterModal";
-import { analyzeResume, generateCoverLetter } from "../api/resumes";
-import { Loader2, Sparkles, FileText } from "lucide-react";
+import InterviewQuestionsModal from "../components/InterviewQuestionsModal";
+import {
+  analyzeResume,
+  generateCoverLetter,
+  generateInterviewQuestions,
+} from "../api/resumes";
+import { Loader2, Sparkles, FileText, HelpCircle } from "lucide-react";
 
 export default function Dashboard() {
   const [resume, setResume] = useState(null);
@@ -12,8 +17,12 @@ export default function Dashboard() {
   const [jobDescription, setJobDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
+
   const [coverLetter, setCoverLetter] = useState(null);
   const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
+
+  const [interviewQuestions, setInterviewQuestions] = useState(null);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
   const handleUploadSuccess = (resumeData) => {
     setResume(resumeData);
@@ -59,6 +68,24 @@ export default function Dashboard() {
       );
     } finally {
       setIsGeneratingLetter(false);
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
+    if (!resume) return;
+    setError("");
+    setIsGeneratingQuestions(true);
+
+    try {
+      const response = await generateInterviewQuestions(
+        resume.id,
+        jobDescription.trim() || null
+      );
+      setInterviewQuestions(response.data.questions);
+    } catch (err) {
+      setError(err.response?.data?.detail || "Question generation failed.");
+    } finally {
+      setIsGeneratingQuestions(false);
     }
   };
 
@@ -119,7 +146,7 @@ export default function Dashboard() {
               </p>
             )}
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               {!analysis && (
                 <button
                   onClick={handleAnalyze}
@@ -157,6 +184,24 @@ export default function Dashboard() {
                   </>
                 )}
               </button>
+
+              <button
+                onClick={handleGenerateQuestions}
+                disabled={isGeneratingQuestions}
+                className="flex-1 flex items-center justify-center gap-2 bg-surface-hover hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold py-2.5 rounded-lg border border-border transition"
+              >
+                {isGeneratingQuestions ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Preparing...
+                  </>
+                ) : (
+                  <>
+                    <HelpCircle size={18} />
+                    Interview Prep
+                  </>
+                )}
+              </button>
             </div>
           </div>
         )}
@@ -168,6 +213,13 @@ export default function Dashboard() {
         <CoverLetterModal
           coverLetter={coverLetter}
           onClose={() => setCoverLetter(null)}
+        />
+      )}
+
+      {interviewQuestions && (
+        <InterviewQuestionsModal
+          questions={interviewQuestions}
+          onClose={() => setInterviewQuestions(null)}
         />
       )}
     </div>
