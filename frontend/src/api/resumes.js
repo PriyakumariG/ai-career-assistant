@@ -26,3 +26,11 @@ export const generateInterviewQuestions = (resumeId, jobDescription = null) =>
   apiClient.post(`/resumes/${resumeId}/interview-questions`, {
     job_description: jobDescription,
   });  
+
+export const generateLearningRoadmap = (resumeId, missingSkills, jobDescription = null) =>
+  apiClient.post(`/resumes/${resumeId}/roadmap`, {
+    missing_skills: missingSkills,
+    job_description: jobDescription,
+  });
+
+  

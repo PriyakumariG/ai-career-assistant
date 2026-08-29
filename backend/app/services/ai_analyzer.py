@@ -143,3 +143,52 @@ def generate_interview_questions(resume_text: str, job_description: str | None =
 
     result = json.loads(response.text)
     return result.get("questions", [])
+
+ROADMAP_PROMPT = """You are an expert technical mentor helping a job seeker close skill gaps.
+Based on the resume below and this list of missing/target skills, create a structured learning roadmap.
+
+Missing skills to address: {missing_skills}
+{job_context}
+
+Guidelines:
+- Organize into 3-5 phases (e.g., "Weeks 1-2: Foundations")
+- Each phase should focus on 1-3 related skills, not scatter everything at once
+- For each phase, give 2-3 concrete, actionable learning steps (specific topics, types of practice projects — not just "learn X")
+- Keep the total roadmap realistic for someone job-hunting alongside this prep (assume ~5-10 hours/week available)
+- Do not recommend specific paid courses or named platforms/products; describe the type of resource instead (e.g., "an official documentation walkthrough" or "a hands-on project building X")
+
+Return ONLY valid JSON with this exact structure, no markdown formatting, no extra text:
+{{
+  "roadmap": [
+    {{"phase": "<phase title, e.g. 'Weeks 1-2: Version Control Foundations'>", "skills": [<list of skill strings this phase covers>], "steps": [<list of 2-3 actionable step strings>]}}
+  ]
+}}
+
+Resume text:
+\"\"\"
+{resume_text}
+\"\"\"
+"""
+
+
+def generate_learning_roadmap(
+    resume_text: str, missing_skills: list[str], job_description: str | None = None
+) -> list[dict]:
+    job_context = (
+        f"\nTarget job context: {job_description}\n" if job_description else ""
+    )
+
+    prompt = ROADMAP_PROMPT.format(
+        missing_skills=", ".join(missing_skills) if missing_skills else "general skill gaps for this resume",
+        job_context=job_context,
+        resume_text=resume_text,
+    )
+
+    response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=prompt,
+        config={"response_mime_type": "application/json"},
+    )
+
+    result = json.loads(response.text)
+    return result.get("roadmap", [])

@@ -206,7 +206,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {analysis && <AnalysisResults analysis={analysis} />}
+        {analysis && <AnalysisResults analysis={analysis} resumeId={resume.id} />}
       </main>
 
       {coverLetter && (

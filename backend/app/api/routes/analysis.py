@@ -8,8 +8,15 @@ from app.models.resume import Resume
 from app.models.analysis import Analysis
 from app.schemas.analysis import AnalysisRequest, AnalysisOut
 from app.schemas.cover_letter import CoverLetterRequest, CoverLetterResponse
-from app.services.ai_analyzer import analyze_resume, generate_cover_letter, generate_interview_questions
 from app.schemas.interview import InterviewQuestionsRequest, InterviewQuestionsResponse
+from app.schemas.roadmap import RoadmapRequest, RoadmapResponse
+from app.services.ai_analyzer import (
+    analyze_resume,
+    generate_cover_letter,
+    generate_interview_questions,
+    generate_learning_roadmap,
+)
+
 
 
 router = APIRouter()
@@ -95,3 +102,28 @@ def create_interview_questions(
         raise HTTPException(status_code=502, detail="Interview question generation failed, please try again")
 
     return InterviewQuestionsResponse(questions=questions)
+
+@router.post("/resumes/{resume_id}/roadmap", response_model=RoadmapResponse)
+def create_learning_roadmap(
+    resume_id: int,
+    request: RoadmapRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id, Resume.user_id == current_user.id
+    ).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if not resume.extracted_text:
+        raise HTTPException(status_code=400, detail="Resume has no extracted text")
+
+    try:
+        roadmap = generate_learning_roadmap(
+            resume.extracted_text, request.missing_skills, request.job_description
+        )
+    except Exception:
+        raise HTTPException(status_code=502, detail="Roadmap generation failed, please try again")
+
+    return RoadmapResponse(roadmap=roadmap)

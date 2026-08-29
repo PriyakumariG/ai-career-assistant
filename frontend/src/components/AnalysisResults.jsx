@@ -1,4 +1,7 @@
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle2, AlertCircle, Map, Loader2 } from "lucide-react";
+import { generateLearningRoadmap } from "../api/resumes";
+import RoadmapModal from "./RoadmapModal";
 
 function getScoreColor(score) {
   if (score >= 75) return "text-success";
@@ -6,7 +9,31 @@ function getScoreColor(score) {
   return "text-danger";
 }
 
-export default function AnalysisResults({ analysis }) {
+export default function AnalysisResults({ analysis, resumeId }) {
+  const [roadmap, setRoadmap] = useState(null);
+  const [isGeneratingRoadmap, setIsGeneratingRoadmap] = useState(false);
+  const [roadmapError, setRoadmapError] = useState("");
+
+  const handleGenerateRoadmap = async () => {
+    setRoadmapError("");
+    setIsGeneratingRoadmap(true);
+
+    try {
+      const response = await generateLearningRoadmap(
+        resumeId,
+        analysis.missing_skills || [],
+        analysis.job_description
+      );
+      setRoadmap(response.data.roadmap);
+    } catch (err) {
+      setRoadmapError(
+        err.response?.data?.detail || "Roadmap generation failed."
+      );
+    } finally {
+      setIsGeneratingRoadmap(false);
+    }
+  };
+
   return (
     <div className="bg-surface border border-border rounded-xl p-6 space-y-6">
       <div className="flex items-center gap-6">
@@ -35,7 +62,9 @@ export default function AnalysisResults({ analysis }) {
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className={`text-2xl font-bold ${getScoreColor(analysis.ats_score)}`}>
+            <span
+              className={`text-2xl font-bold ${getScoreColor(analysis.ats_score)}`}
+            >
               {analysis.ats_score}
             </span>
           </div>
@@ -80,6 +109,34 @@ export default function AnalysisResults({ analysis }) {
           </p>
         </div>
       )}
+
+      {roadmapError && (
+        <p className="text-danger text-sm bg-danger/10 border border-danger/30 rounded-lg px-3 py-2">
+          {roadmapError}
+        </p>
+      )}
+
+      {analysis.missing_skills?.length > 0 && (
+        <button
+          onClick={handleGenerateRoadmap}
+          disabled={isGeneratingRoadmap}
+          className="flex items-center justify-center gap-2 w-full bg-surface-hover hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold py-2.5 rounded-lg border border-border transition"
+        >
+          {isGeneratingRoadmap ? (
+            <>
+              <Loader2 className="animate-spin" size={18} />
+              Building roadmap...
+            </>
+          ) : (
+            <>
+              <Map size={18} />
+              Generate Learning Roadmap
+            </>
+          )}
+        </button>
+      )}
+
+      {roadmap && <RoadmapModal roadmap={roadmap} onClose={() => setRoadmap(null)} />}
     </div>
   );
 }
