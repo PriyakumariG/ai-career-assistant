@@ -1,23 +1,41 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
+import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Dashboard from "./pages/Dashboard";
+import DashboardLayout from "./pages/DashboardLayout";
+import Overview from "./pages/dashboard/Overview";
+import ResumePage from "./pages/dashboard/ResumePage";
+import CoverLetterPage from "./pages/dashboard/CoverLetterPage";
+import InterviewPrepPage from "./pages/dashboard/InterviewPrepPage";
+import RoadmapPage from "./pages/dashboard/RoadmapPage";
+import HistoryPage from "./pages/dashboard/HistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { ResumeProvider } from "./context/ResumeContext";
 
 function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+
       <Route
         path="/dashboard"
         element={
           <ProtectedRoute>
-            <Dashboard />
+            <ResumeProvider>
+              <DashboardLayout />
+            </ResumeProvider>
           </ProtectedRoute>
         }
-      />
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
+      >
+        <Route index element={<Overview />} />
+        <Route path="resume" element={<ResumePage />} />
+        <Route path="cover-letter" element={<CoverLetterPage />} />
+        <Route path="interview-prep" element={<InterviewPrepPage />} />
+        <Route path="roadmap" element={<RoadmapPage />} />
+        <Route path="history" element={<HistoryPage />} />
+      </Route>
     </Routes>
   );
 }
