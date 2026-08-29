@@ -78,3 +78,21 @@ def get_resume(
     if not resume:
         raise HTTPException(status_code=404, detail="Resume not found")
     return resume
+
+@router.delete("/{resume_id}", status_code=204)
+def delete_resume(
+    resume_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id, Resume.user_id == current_user.id
+    ).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if os.path.exists(resume.file_path):
+        os.remove(resume.file_path)
+
+    db.delete(resume)
+    db.commit()

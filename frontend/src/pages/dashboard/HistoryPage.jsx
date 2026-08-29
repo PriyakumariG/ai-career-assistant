@@ -1,34 +1,27 @@
 import { useState, useEffect } from "react";
-import { listResumes, getResume } from "../../api/resumes";
-import { FileText, Loader2, X } from "lucide-react";
+import { listResumes, getResume, deleteResume } from "../../api/resumes";
+import ConfirmDeleteModal from "../../components/ConfirmDeleteModal";
+import { FileText, Loader2, X, Trash2 } from "lucide-react";
 
 export default function HistoryPage() {
   const [resumes, setResumes] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedResume, setSelectedResume] = useState(null);
+  const [resumeToDelete, setResumeToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    listResumes()
-      .then((response) => {
-        const seen = new Map();
-        response.data.forEach((resume) => {
-          const existing = seen.get(resume.file_name);
-          if (
-            !existing ||
-            new Date(resume.uploaded_at) > new Date(existing.uploaded_at)
-          ) {
-            seen.set(resume.file_name, resume);
-          }
-        });
-        const deduped = Array.from(seen.values()).sort(
-          (a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at)
-        );
-        setResumes(deduped);
-      })
-      .catch(() => setError("Failed to load resume history."))
-      .finally(() => setIsLoading(false));
-  }, []);
+  listResumes()
+    .then((response) => {
+      const sorted = [...response.data].sort(
+        (a, b) => new Date(b.uploaded_at) - new Date(a.uploaded_at)
+      );
+      setResumes(sorted);
+    })
+    .catch(() => setError("Failed to load resume history."))
+    .finally(() => setIsLoading(false));
+}, []);
 
   const handleView = async (resumeId) => {
     try {
@@ -36,6 +29,20 @@ export default function HistoryPage() {
       setSelectedResume(response.data);
     } catch {
       setError("Failed to load resume details.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!resumeToDelete) return;
+    setIsDeleting(true);
+    try {
+      await deleteResume(resumeToDelete.id);
+      setResumes((prev) => prev.filter((r) => r.id !== resumeToDelete.id));
+      setResumeToDelete(null);
+    } catch {
+      setError("Failed to delete resume.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -67,21 +74,31 @@ export default function HistoryPage() {
 
       <div className="space-y-3">
         {resumes.map((resume) => (
-          <button
+          <div
             key={resume.id}
-            onClick={() => handleView(resume.id)}
-            className="w-full bg-surface border border-border hover:border-accent/50 rounded-xl p-4 flex items-center gap-3 text-left transition"
+            className="bg-surface border border-border hover:border-accent/50 rounded-xl p-4 flex items-center gap-3 transition"
           >
-            <FileText className="text-accent flex-shrink-0" size={20} />
-            <div>
-              <p className="text-text font-medium text-sm">
-                {resume.file_name}
-              </p>
-              <p className="text-text-muted text-xs">
-                Uploaded {new Date(resume.uploaded_at).toLocaleDateString()}
-              </p>
-            </div>
-          </button>
+            <button
+              onClick={() => handleView(resume.id)}
+              className="flex items-center gap-3 flex-1 text-left min-w-0"
+            >
+              <FileText className="text-accent flex-shrink-0" size={20} />
+              <div className="min-w-0">
+                <p className="text-text font-medium text-sm truncate">
+                  {resume.file_name}
+                </p>
+                <p className="text-text-muted text-xs">
+                  Uploaded {new Date(resume.uploaded_at).toLocaleDateString()}
+                </p>
+              </div>
+            </button>
+            <button
+              onClick={() => setResumeToDelete(resume)}
+              className="text-text-muted hover:text-danger transition flex-shrink-0"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         ))}
       </div>
 
@@ -106,6 +123,15 @@ export default function HistoryPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {resumeToDelete && (
+        <ConfirmDeleteModal
+          fileName={resumeToDelete.file_name}
+          onConfirm={handleDelete}
+          onCancel={() => setResumeToDelete(null)}
+          isDeleting={isDeleting}
+        />
       )}
     </div>
   );

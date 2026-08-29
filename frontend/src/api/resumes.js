@@ -33,4 +33,5 @@ export const generateLearningRoadmap = (resumeId, missingSkills, jobDescription 
     job_description: jobDescription,
   });
 
-  
+export const deleteResume = (resumeId) =>
+  apiClient.delete(`/resumes/${resumeId}`);
