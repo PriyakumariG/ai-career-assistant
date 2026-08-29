@@ -7,7 +7,8 @@ from app.models.user import User
 from app.models.resume import Resume
 from app.models.analysis import Analysis
 from app.schemas.analysis import AnalysisRequest, AnalysisOut
-from app.services.ai_analyzer import analyze_resume
+from app.schemas.cover_letter import CoverLetterRequest, CoverLetterResponse
+from app.services.ai_analyzer import analyze_resume, generate_cover_letter
 
 router = APIRouter()
 
@@ -45,3 +46,27 @@ def analyze(
     db.refresh(analysis)
 
     return analysis
+
+
+@router.post("/resumes/{resume_id}/cover-letter", response_model=CoverLetterResponse)
+def create_cover_letter(
+    resume_id: int,
+    request: CoverLetterRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id, Resume.user_id == current_user.id
+    ).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if not resume.extracted_text:
+        raise HTTPException(status_code=400, detail="Resume has no extracted text")
+
+    try:
+        cover_letter = generate_cover_letter(resume.extracted_text, request.job_description)
+    except Exception:
+        raise HTTPException(status_code=502, detail="Cover letter generation failed, please try again")
+
+    return CoverLetterResponse(cover_letter=cover_letter)

@@ -2,8 +2,9 @@ import { useState } from "react";
 import Navbar from "../components/Navbar";
 import ResumeUpload from "../components/ResumeUpload";
 import AnalysisResults from "../components/AnalysisResults";
-import { analyzeResume } from "../api/resumes";
-import { Loader2, Sparkles } from "lucide-react";
+import CoverLetterModal from "../components/CoverLetterModal";
+import { analyzeResume, generateCoverLetter } from "../api/resumes";
+import { Loader2, Sparkles, FileText } from "lucide-react";
 
 export default function Dashboard() {
   const [resume, setResume] = useState(null);
@@ -11,10 +12,13 @@ export default function Dashboard() {
   const [jobDescription, setJobDescription] = useState("");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState("");
+  const [coverLetter, setCoverLetter] = useState(null);
+  const [isGeneratingLetter, setIsGeneratingLetter] = useState(false);
 
   const handleUploadSuccess = (resumeData) => {
     setResume(resumeData);
     setAnalysis(null);
+    setJobDescription("");
     setError("");
   };
 
@@ -35,6 +39,26 @@ export default function Dashboard() {
       );
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  const handleGenerateCoverLetter = async () => {
+    if (!resume) return;
+    setError("");
+    setIsGeneratingLetter(true);
+
+    try {
+      const response = await generateCoverLetter(
+        resume.id,
+        jobDescription.trim() || null
+      );
+      setCoverLetter(response.data.cover_letter);
+    } catch (err) {
+      setError(
+        err.response?.data?.detail || "Cover letter generation failed."
+      );
+    } finally {
+      setIsGeneratingLetter(false);
     }
   };
 
@@ -65,6 +89,7 @@ export default function Dashboard() {
               onClick={() => {
                 setResume(null);
                 setAnalysis(null);
+                setJobDescription("");
               }}
               className="text-text-muted hover:text-text text-sm transition"
             >
@@ -73,7 +98,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {resume && !analysis && (
+        {resume && (
           <div className="bg-surface border border-border rounded-xl p-6 space-y-4">
             <div>
               <label className="block text-sm text-text-muted mb-1.5">
@@ -94,28 +119,57 @@ export default function Dashboard() {
               </p>
             )}
 
-            <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing}
-              className="flex items-center justify-center gap-2 w-full bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-base font-semibold py-2.5 rounded-lg transition"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="animate-spin" size={18} />
-                  Analyzing with AI...
-                </>
-              ) : (
-                <>
-                  <Sparkles size={18} />
-                  Analyze Resume
-                </>
+            <div className="flex gap-3">
+              {!analysis && (
+                <button
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                  className="flex-1 flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-base font-semibold py-2.5 rounded-lg transition"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={18} />
+                      Analyze Resume
+                    </>
+                  )}
+                </button>
               )}
-            </button>
+
+              <button
+                onClick={handleGenerateCoverLetter}
+                disabled={isGeneratingLetter}
+                className="flex-1 flex items-center justify-center gap-2 bg-surface-hover hover:bg-border disabled:opacity-50 disabled:cursor-not-allowed text-text font-semibold py-2.5 rounded-lg border border-border transition"
+              >
+                {isGeneratingLetter ? (
+                  <>
+                    <Loader2 className="animate-spin" size={18} />
+                    Writing...
+                  </>
+                ) : (
+                  <>
+                    <FileText size={18} />
+                    Cover Letter
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         )}
 
         {analysis && <AnalysisResults analysis={analysis} />}
       </main>
+
+      {coverLetter && (
+        <CoverLetterModal
+          coverLetter={coverLetter}
+          onClose={() => setCoverLetter(null)}
+        />
+      )}
     </div>
   );
 }
