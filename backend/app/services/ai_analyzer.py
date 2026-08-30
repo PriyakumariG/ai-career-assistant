@@ -10,9 +10,18 @@ Analyze the resume below{job_context}.
 Return ONLY valid JSON with this exact structure, no markdown formatting, no extra text:
 {{
   "ats_score": <integer 0-100>,
+  "matched_skills": [<list of skills from the resume that are relevant/strong>],
   "missing_skills": [<list of strings>],
-  "suggestions": "<2-4 sentences of specific, actionable feedback>"
+  "suggestions": "<2-4 sentences of specific, actionable feedback>",
+  "experience_match": <integer 0-100, or null if no job description was provided>,
+  "keyword_match": <integer 0-100, or null if no job description was provided>
 }}
+
+Notes:
+- "matched_skills" should list skills genuinely present and demonstrated in the resume.
+- "experience_match" should reflect how well the years/type of experience align with what the job description asks for (only meaningful when a job description is provided).
+- "keyword_match" should reflect what percentage of the job description's key terms/technologies appear in the resume (only meaningful when a job description is provided).
+- If no job description is provided, set "experience_match" and "keyword_match" to null.
 
 Resume text:
 \"\"\"
@@ -46,10 +55,12 @@ def analyze_resume(resume_text: str, job_description: str | None = None) -> dict
 
     return {
         "ats_score": result.get("ats_score"),
+        "matched_skills": result.get("matched_skills", []),
         "missing_skills": result.get("missing_skills", []),
         "suggestions": result.get("suggestions", ""),
+        "experience_match": result.get("experience_match"),
+        "keyword_match": result.get("keyword_match"),
     }
-
 
 COVER_LETTER_PROMPT = """You are an expert career coach and professional writer.
 Write a compelling, personalized cover letter based on the resume below{job_context}.
@@ -192,3 +203,32 @@ def generate_learning_roadmap(
 
     result = json.loads(response.text)
     return result.get("roadmap", [])
+
+CHAT_SYSTEM_PROMPT = """You are a helpful career assistant answering questions about a specific resume.
+Base every answer strictly on the resume content provided below — do not invent experience, skills, or projects that aren't mentioned.
+If asked something the resume doesn't provide enough information to answer, say so honestly rather than guessing.
+Keep answers concise and conversational (2-4 sentences unless more detail is genuinely needed).
+
+Resume text:
+\"\"\"
+{resume_text}
+\"\"\"
+"""
+
+
+def chat_about_resume(resume_text: str, conversation_history: list[dict], question: str) -> str:
+    system_prompt = CHAT_SYSTEM_PROMPT.format(resume_text=resume_text)
+
+    history_text = "\n".join(
+        f"{'User' if msg['role'] == 'user' else 'Assistant'}: {msg['content']}"
+        for msg in conversation_history
+    )
+
+    full_prompt = f"{system_prompt}\n\nConversation so far:\n{history_text}\n\nUser: {question}\nAssistant:"
+
+    response = client.models.generate_content(
+        model="gemini-3.6-flash",
+        contents=full_prompt,
+    )
+
+    return response.text.strip()

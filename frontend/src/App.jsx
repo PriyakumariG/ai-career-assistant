@@ -11,6 +11,7 @@ import RoadmapPage from "./pages/dashboard/RoadmapPage";
 import HistoryPage from "./pages/dashboard/HistoryPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { ResumeProvider } from "./context/ResumeContext";
+import ChatPage from "./pages/dashboard/ChatPage";
 
 function App() {
   return (
@@ -29,8 +30,10 @@ function App() {
           </ProtectedRoute>
         }
       >
+      
         <Route index element={<Overview />} />
         <Route path="resume" element={<ResumePage />} />
+        <Route path="chat" element={<ChatPage />} />  
         <Route path="cover-letter" element={<CoverLetterPage />} />
         <Route path="interview-prep" element={<InterviewPrepPage />} />
         <Route path="roadmap" element={<RoadmapPage />} />

@@ -35,3 +35,9 @@ export const generateLearningRoadmap = (resumeId, missingSkills, jobDescription 
 
 export const deleteResume = (resumeId) =>
   apiClient.delete(`/resumes/${resumeId}`);
+
+export const chatWithResume = (resumeId, question, conversationHistory) =>
+  apiClient.post(`/resumes/${resumeId}/chat`, {
+    question,
+    conversation_history: conversationHistory,
+  });

@@ -12,6 +12,9 @@ class Analysis(Base):
     missing_skills = Column(JSON, nullable=True)
     suggestions = Column(Text, nullable=True)
     job_description = Column(Text, nullable=True)
+    matched_skills = Column(JSON, nullable=True)
+    experience_match = Column(Integer, nullable=True)
+    keyword_match = Column(Integer, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     resume = relationship("Resume", back_populates="analyses")

@@ -79,6 +79,25 @@ export default function AnalysisResults({ analysis, resumeId }) {
         </div>
       </div>
 
+      {analysis.matched_skills?.length > 0 && (
+        <div>
+          <h4 className="text-text font-medium mb-2 flex items-center gap-1.5">
+            <CheckCircle2 size={16} className="text-success" />
+            Matched Skills
+          </h4>
+          <div className="flex flex-wrap gap-2">
+            {analysis.matched_skills.map((skill, i) => (
+              <span
+                key={i}
+                className="bg-success/10 text-success text-sm px-3 py-1 rounded-full border border-success/30"
+              >
+                {skill}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {analysis.missing_skills?.length > 0 && (
         <div>
           <h4 className="text-text font-medium mb-2 flex items-center gap-1.5">
@@ -95,6 +114,44 @@ export default function AnalysisResults({ analysis, resumeId }) {
               </span>
             ))}
           </div>
+        </div>
+      )}
+
+      {(analysis.experience_match != null || analysis.keyword_match != null) && (
+        <div className="space-y-3">
+          {analysis.experience_match != null && (
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-text-muted">Experience Match</span>
+                <span className="text-text font-medium">
+                  {analysis.experience_match}%
+                </span>
+              </div>
+              <div className="w-full bg-surface-hover rounded-full h-2">
+                <div
+                  className="bg-accent h-2 rounded-full transition-all"
+                  style={{ width: `${analysis.experience_match}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {analysis.keyword_match != null && (
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-text-muted">Keyword Match</span>
+                <span className="text-text font-medium">
+                  {analysis.keyword_match}%
+                </span>
+              </div>
+              <div className="w-full bg-surface-hover rounded-full h-2">
+                <div
+                  className="bg-accent h-2 rounded-full transition-all"
+                  style={{ width: `${analysis.keyword_match}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -136,7 +193,9 @@ export default function AnalysisResults({ analysis, resumeId }) {
         </button>
       )}
 
-      {roadmap && <RoadmapModal roadmap={roadmap} onClose={() => setRoadmap(null)} />}
+      {roadmap && (
+        <RoadmapModal roadmap={roadmap} onClose={() => setRoadmap(null)} />
+      )}
     </div>
   );
 }

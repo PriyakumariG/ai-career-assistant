@@ -16,6 +16,14 @@ from app.services.ai_analyzer import (
     generate_interview_questions,
     generate_learning_roadmap,
 )
+from app.schemas.chat import ChatRequest, ChatResponse
+from app.services.ai_analyzer import (
+    analyze_resume,
+    generate_cover_letter,
+    generate_interview_questions,
+    generate_learning_roadmap,
+    chat_about_resume,
+)
 
 
 
@@ -46,10 +54,13 @@ def analyze(
     analysis = Analysis(
         resume_id=resume.id,
         ats_score=result["ats_score"],
+        matched_skills=result["matched_skills"],
         missing_skills=result["missing_skills"],
         suggestions=result["suggestions"],
+        experience_match=result["experience_match"],
+        keyword_match=result["keyword_match"],
         job_description=request.job_description,
-    )
+)
     db.add(analysis)
     db.commit()
     db.refresh(analysis)
@@ -127,3 +138,28 @@ def create_learning_roadmap(
         raise HTTPException(status_code=502, detail="Roadmap generation failed, please try again")
 
     return RoadmapResponse(roadmap=roadmap)
+
+@router.post("/resumes/{resume_id}/chat", response_model=ChatResponse)
+def chat_with_resume(
+    resume_id: int,
+    request: ChatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    resume = db.query(Resume).filter(
+        Resume.id == resume_id, Resume.user_id == current_user.id
+    ).first()
+    if not resume:
+        raise HTTPException(status_code=404, detail="Resume not found")
+
+    if not resume.extracted_text:
+        raise HTTPException(status_code=400, detail="Resume has no extracted text")
+
+    try:
+        history = [msg.model_dump() for msg in request.conversation_history]
+        answer = chat_about_resume(resume.extracted_text, history, request.question)
+    except Exception:
+        raise HTTPException(status_code=502, detail="Chat failed, please try again")
+
+    return ChatResponse(answer=answer)
+

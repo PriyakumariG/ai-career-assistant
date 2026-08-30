@@ -6,15 +6,18 @@ import {
   HelpCircle,
   Map,
   History,
+  MessageCircle,
 } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard, end: true },
   { to: "/dashboard/resume", label: "Resume", icon: FileText },
+  { to: "/dashboard/chat", label: "Resume Chat", icon: MessageCircle },
   { to: "/dashboard/cover-letter", label: "Cover Letter", icon: PenLine },
   { to: "/dashboard/interview-prep", label: "Interview Prep", icon: HelpCircle },
   { to: "/dashboard/roadmap", label: "Learning Roadmap", icon: Map },
   { to: "/dashboard/history", label: "Resume History", icon: History },
+
 ];
 
 export default function Sidebar() {
