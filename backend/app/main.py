@@ -10,7 +10,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
-        "https://ai-career-assistant.vercel.app", 
+        "https://ai-career-assistant-indol.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
